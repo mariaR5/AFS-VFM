@@ -1,0 +1,15 @@
+# Ignore datasets and images
+data/
+*.jpg
+*.png
+*.jpeg
+
+# Ignore PyTorch model weights (if downloaded locally)
+*.pt
+*.pth
+
+# Ignore virtual environments and cache
+venv/
+env/
+__pycache__/
+*.csv
