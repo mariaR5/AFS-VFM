@@ -4,10 +4,13 @@ import zipfile
 import urllib.request
 from PIL import Image
 from io import BytesIO
+from collections import defaultdict
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def curate_coco(num_images=500, target_size=(224, 224)):
     # Create target directory
-    save_dir = "../../data/coco"
+    save_dir = os.path.join(BASE_DIR, "data", "coco")
     os.makedirs(save_dir, exist_ok=True)
     
     print("Downloading official COCO val2017 annotations...")
@@ -28,6 +31,12 @@ def curate_coco(num_images=500, target_size=(224, 224)):
     # Map categories for better readability
     categories = {cat['id']: cat['name'] for cat in coco_data['categories']}
     
+    # Build defaultdict
+    ann_by_img = defaultdict(list)
+    for ann in coco_data['annotations']:
+        ann_by_img[ann['image_id']].append(ann)
+    
+        
     # Download frist num_images metadata
     images_to_download = coco_data['images'][:num_images]
     
@@ -64,7 +73,7 @@ def curate_coco(num_images=500, target_size=(224, 224)):
         image.save(image_path)
         
         # Extract bounding boxes for this image
-        annotations = [ann for ann in coco_data['annotations'] if ann['image_id'] == img_id]
+        annotations = ann_by_img.get(img_id, [])
         
         formatted_annotations = []
         for ann in annotations:

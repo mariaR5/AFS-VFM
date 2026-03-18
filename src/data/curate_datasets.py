@@ -2,12 +2,14 @@ import os
 import json
 from datasets import load_dataset
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 def curate_imagenet(num_images=1000, target_size=(224, 224)):
     print(f"Downloading/Loading ImageNet-1k validation split...")
     dataset = load_dataset("imagenet-1k", split="validation", streaming=True)
     
     # Create target directory
-    save_dir = "../../data/imagenet"
+    save_dir = os.path.join(BASE_DIR, "data", "imagenet")
     os.makedirs(save_dir, exist_ok=True)
     
     ground_truth_map = {}
@@ -15,7 +17,7 @@ def curate_imagenet(num_images=1000, target_size=(224, 224)):
     print(f"Extracting {num_images} images...")
     for i, item in enumerate(dataset):
         # Stop when target number of images reached
-        if i > num_images:
+        if i >= num_images:
             break
         
         image = item['image']

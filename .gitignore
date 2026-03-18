@@ -1,5 +1,5 @@
 # Ignore datasets and images
-data/
+/data/
 *.jpg
 *.png
 *.jpeg

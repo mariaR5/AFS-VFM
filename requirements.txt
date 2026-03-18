@@ -4,3 +4,5 @@ torchaudio
 opencv-python
 numpy
 pandas
+datasets
+Pillow
