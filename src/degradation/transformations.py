@@ -18,8 +18,8 @@ import numpy as np
 def motion_blur(image: np.ndarray, severity: float) -> np.ndarray:
     """Apply horizontal motion blur with increasing kernel length.
 
-    Kernel length scales linearly from 3 px (severity 0) to 51 px
-    (severity 1).
+    Kernel length scales linearly from 1 px (severity 0, no blur) to
+    51 px (severity 1).  At severity 0 the image is returned untouched.
 
     Args:
         image: RGB uint8 array of shape (H, W, 3).
@@ -28,11 +28,15 @@ def motion_blur(image: np.ndarray, severity: float) -> np.ndarray:
     Returns:
         Blurred image with the same shape and dtype.
     """
-    # Kernel length must be odd and >= 1
-    kernel_size = int(3 + severity * 48)  # 3 → 51
+    # At severity 0 → kernel_size 1 (identity), severity 1 → 51
+    kernel_size = int(1 + severity * 50)  # 1 → 51
     if kernel_size % 2 == 0:
         kernel_size += 1
     kernel_size = max(1, kernel_size)
+
+    # kernel_size 1 means no blur at all — return original
+    if kernel_size <= 1:
+        return image.copy()
 
     # Horizontal motion blur kernel
     kernel = np.zeros((kernel_size, kernel_size), dtype=np.float32)
@@ -50,8 +54,8 @@ def motion_blur(image: np.ndarray, severity: float) -> np.ndarray:
 def occlusion(image: np.ndarray, severity: float) -> np.ndarray:
     """Overlay a centred grey rectangle that grows with severity.
 
-    The occluded area scales linearly from 5 % to 80 % of the total
-    image area.
+    The occluded area scales linearly from 0 % (severity 0, untouched)
+    to 80 % of the total image area (severity 1).
 
     Args:
         image: RGB uint8 array of shape (H, W, 3).
@@ -60,12 +64,17 @@ def occlusion(image: np.ndarray, severity: float) -> np.ndarray:
     Returns:
         Occluded image with the same shape and dtype.
     """
-    h, w = image.shape[:2]
     result = image.copy()
 
-    # Fraction of each dimension to occlude
-    fraction = 0.05 + severity * 0.75  # 5 % → 80 %
-    side_frac = np.sqrt(fraction)       # equal scaling on both axes
+    # At severity 0 → no occlusion at all
+    if severity <= 0.0:
+        return result
+
+    h, w = image.shape[:2]
+
+    # Fraction of total area to occlude: 0 % → 80 %
+    fraction = severity * 0.80
+    side_frac = np.sqrt(fraction)  # equal scaling on both axes
 
     occ_h = int(h * side_frac)
     occ_w = int(w * side_frac)
@@ -96,18 +105,16 @@ def lighting(image: np.ndarray, severity: float) -> np.ndarray:
     Returns:
         Dimmed image with the same shape and dtype.
     """
-    # OpenCV HSV conversion expects BGR input
-    bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV).astype(np.float32)
+    # Direct RGB → HSV conversion (no BGR intermediary needed)
+    hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV).astype(np.float32)
 
     # Scale the V (brightness) channel
-    scale = 1.0 - 0.95 * severity
-    hsv[:, :, 2] *= scale
+    v_scale = 1.0 - 0.95 * severity
+    hsv[:, :, 2] *= v_scale
     hsv[:, :, 2] = np.clip(hsv[:, :, 2], 0, 255)
 
     hsv = hsv.astype(np.uint8)
-    bgr_out = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-    rgb_out = cv2.cvtColor(bgr_out, cv2.COLOR_BGR2RGB)
+    rgb_out = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
     return rgb_out
 
 
