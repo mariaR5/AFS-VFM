@@ -126,7 +126,11 @@ class DegradationPipeline:
         frames = np.empty((self.num_frames, h, w, 3), dtype=np.uint8)
 
         for i in range(self.num_frames):
-            severity = i / (self.num_frames - 1)  # 0.0 → 1.0 linearly
+            # Guard against ZeroDivisionError when num_frames == 1
+            if self.num_frames == 1:
+                severity = 0.0
+            else:
+                severity = i / (self.num_frames - 1)  # 0.0 → 1.0 linearly
             frames[i] = transform_fn(image, severity)
 
         return frames
