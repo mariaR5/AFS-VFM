@@ -22,15 +22,6 @@ from .utils import load_image
 _TYPE_ALIASES: dict[str, str] = {
     "blur": "motion_blur",
     "motion_blur": "motion_blur",
-    "occlusion": "occlusion",
-    "occlude": "occlusion",
-    "lighting": "lighting",
-    "light": "lighting",
-    "dark": "lighting",
-    "scale": "scale",
-    "zoom": "scale",
-    "viewpoint": "viewpoint",
-    "rotate": "viewpoint",
 }
 
 
@@ -46,10 +37,6 @@ class DegradationPipeline:
     # Mapping from canonical degradation name → implementation function
     _TRANSFORMS: dict = {
         "motion_blur": transformations.motion_blur,
-        "occlusion": transformations.occlusion,
-        "lighting": transformations.lighting,
-        "scale": transformations.scale,
-        "viewpoint": transformations.viewpoint,
     }
 
     def __init__(self, num_frames: int = 20) -> None:
@@ -61,26 +48,6 @@ class DegradationPipeline:
     def motion_blur(image: np.ndarray, severity: float) -> np.ndarray:
         """Apply horizontal motion blur. See ``transformations.motion_blur``."""
         return transformations.motion_blur(image, severity)
-
-    @staticmethod
-    def occlusion(image: np.ndarray, severity: float) -> np.ndarray:
-        """Apply centre occlusion. See ``transformations.occlusion``."""
-        return transformations.occlusion(image, severity)
-
-    @staticmethod
-    def lighting(image: np.ndarray, severity: float) -> np.ndarray:
-        """Reduce lighting. See ``transformations.lighting``."""
-        return transformations.lighting(image, severity)
-
-    @staticmethod
-    def scale(image: np.ndarray, severity: float) -> np.ndarray:
-        """Scale-down with padding. See ``transformations.scale``."""
-        return transformations.scale(image, severity)
-
-    @staticmethod
-    def viewpoint(image: np.ndarray, severity: float) -> np.ndarray:
-        """Affine rotation. See ``transformations.viewpoint``."""
-        return transformations.viewpoint(image, severity)
 
     # ── Core orchestration ──────────────────────────────────────────────
 
@@ -100,8 +67,7 @@ class DegradationPipeline:
             Source image in RGB uint8 format, shape (H, W, 3).
         degradation_type : str
             Name of the degradation to apply.  Accepted values include
-            ``"blur"``, ``"motion_blur"``, ``"occlusion"``, ``"lighting"``,
-            ``"scale"``, ``"viewpoint"`` and common aliases.
+            ``"blur"``, ``"motion_blur"``.
 
         Returns
         -------
@@ -152,7 +118,7 @@ def generate_degradation_sequence(
     image_path : str
         Path to the source image.
     degradation_type : str
-        Kind of degradation (e.g. ``"blur"``, ``"occlusion"``).
+        Kind of degradation (e.g. ``"blur"``).
     num_frames : int, optional
         Number of degradation steps (default 20).
 
