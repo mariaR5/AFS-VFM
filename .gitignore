@@ -1,15 +1,39 @@
-# Ignore datasets and images
-/data/
-*.jpg
-*.png
-*.jpeg
+# Virtual environment
+venv/
+.venv/
 
-# Ignore PyTorch model weights (if downloaded locally)
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Datasets (too large for GitHub — download via script)
+data/coco_val/
+data/imagenet_val/
+data/base_images/
+data/val2017.zip
+data/val2017_full/
+data/imagenetv2.tar.gz
+data/imagenetv2_full/
+data/demo_output/
+data/sample_dog.jpg
+
+# HuggingFace cache
+.cache/
+
+# Model weights (downloaded at runtime)
 *.pt
 *.pth
+*.bin
+*.safetensors
 
-# Ignore virtual environments and cache
-venv/
-env/
-__pycache__/
-*.csv
+# Results (generated, not tracked)
+results/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

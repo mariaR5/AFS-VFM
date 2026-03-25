@@ -22,6 +22,13 @@ from .utils import load_image
 _TYPE_ALIASES: dict[str, str] = {
     "blur": "motion_blur",
     "motion_blur": "motion_blur",
+    "occlusion": "occlusion",
+    "lighting": "lighting",
+    "low_light": "lighting",
+    "scale": "scale",
+    "pixelate": "scale",
+    "viewpoint": "viewpoint",
+    "shear": "viewpoint",
 }
 
 
@@ -37,6 +44,10 @@ class DegradationPipeline:
     # Mapping from canonical degradation name → implementation function
     _TRANSFORMS: dict = {
         "motion_blur": transformations.motion_blur,
+        "occlusion": transformations.occlusion,
+        "lighting": transformations.lighting,
+        "scale": transformations.scale,
+        "viewpoint": transformations.viewpoint,
     }
 
     def __init__(self, num_frames: int = 20) -> None:
@@ -48,6 +59,26 @@ class DegradationPipeline:
     def motion_blur(image: np.ndarray, severity: float) -> np.ndarray:
         """Apply horizontal motion blur. See ``transformations.motion_blur``."""
         return transformations.motion_blur(image, severity)
+
+    @staticmethod
+    def occlusion(image: np.ndarray, severity: float) -> np.ndarray:
+        """Apply random black box occlusion. See ``transformations.occlusion``."""
+        return transformations.occlusion(image, severity)
+
+    @staticmethod
+    def lighting(image: np.ndarray, severity: float) -> np.ndarray:
+        """Apply low-light effect. See ``transformations.lighting``."""
+        return transformations.lighting(image, severity)
+
+    @staticmethod
+    def scale(image: np.ndarray, severity: float) -> np.ndarray:
+        """Apply pixelation via downscaling. See ``transformations.scale``."""
+        return transformations.scale(image, severity)
+
+    @staticmethod
+    def viewpoint(image: np.ndarray, severity: float) -> np.ndarray:
+        """Apply 3D perspective warp. See ``transformations.viewpoint``."""
+        return transformations.viewpoint(image, severity)
 
     # ── Core orchestration ──────────────────────────────────────────────
 
