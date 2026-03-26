@@ -134,11 +134,47 @@ def run_benchmark(pilot=False):
         print("\n  ERROR: No images found. Run 'python download_dataset.py' first.")
         sys.exit(1)
 
-    total_inferences = len(image_files) * len(DEGRADATION_TYPES) * NUM_FRAMES * 3
-    print(f"\n  Images:             {len(image_files)}")
+    # ── Resume support: check for existing partial results ──────────────
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    fieldnames = [
+        "image", "dataset", "degradation", "frame", "severity_pct",
+        "dinov2_prediction", "dinov2_failure",
+        "clip_prediction", "clip_failure",
+        "detr_prediction", "detr_failure",
+    ]
+
+    completed_images = set()
+    all_results = []
+
+    if os.path.exists(csv_path):
+        # Load existing results and figure out which images are fully done
+        with open(csv_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                all_results.append(row)
+        # An image is "complete" if it has all 5 degradations × 20 frames = 100 rows
+        from collections import Counter
+        img_counts = Counter(r["image"] for r in all_results)
+        expected_rows_per_image = len(DEGRADATION_TYPES) * NUM_FRAMES
+        for img_name, count in img_counts.items():
+            if count >= expected_rows_per_image:
+                completed_images.add(img_name)
+        print(f"\n  RESUMING: Found {len(completed_images)} already-completed images")
+        print(f"  Skipping those and continuing from where we left off ...\n")
+
+    remaining = [p for p in image_files if os.path.basename(p) not in completed_images]
+
+    total_inferences = len(remaining) * len(DEGRADATION_TYPES) * NUM_FRAMES * 3
+    print(f"\n  Total images:       {len(image_files)}")
+    print(f"  Already completed:  {len(completed_images)}")
+    print(f"  Remaining:          {len(remaining)}")
     print(f"  Degradation types:  {DEGRADATION_TYPES}")
     print(f"  Frames/sequence:    {NUM_FRAMES}")
     print(f"  Total inferences:   {total_inferences}")
+
+    if not remaining:
+        print("\n  All images already processed! Nothing to do.")
+        return
 
     # ── Load all 3 models ───────────────────────────────────────────────
     print("\n" + "-" * 70)
@@ -154,17 +190,23 @@ def run_benchmark(pilot=False):
 
     print("  All 3 models loaded successfully.\n")
 
-    # ── Run the benchmark ───────────────────────────────────────────────
-    os.makedirs(RESULTS_DIR, exist_ok=True)
-    all_results = []
-    start_time = time.time()
+    # ── Helper to save CSV incrementally ────────────────────────────────
+    def save_csv():
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(all_results)
 
-    for img_idx, img_path in enumerate(image_files, 1):
+    # ── Run the benchmark ───────────────────────────────────────────────
+    start_time = time.time()
+    total_images = len(image_files)
+
+    for img_idx, img_path in enumerate(remaining, len(completed_images) + 1):
         img_file = os.path.basename(img_path)
         dataset_source = "coco" if "coco_val" in img_path else "imagenet"
 
         print(f"\n{'='*70}")
-        print(f"  Image [{img_idx}/{len(image_files)}]: {img_file} ({dataset_source})")
+        print(f"  Image [{img_idx}/{total_images}]: {img_file} ({dataset_source})")
         print(f"{'='*70}")
 
         for deg_type in DEGRADATION_TYPES:
@@ -243,23 +285,20 @@ def run_benchmark(pilot=False):
                     "detr_failure": detr_fail,
                 })
 
-    # ── Export CSV ───────────────────────────────────────────────────────
+        # ── SAVE AFTER EVERY IMAGE (crash-safe!) ───────────────────────
+        save_csv()
+        elapsed_so_far = time.time() - start_time
+        imgs_done = img_idx - len(completed_images)
+        rate = elapsed_so_far / imgs_done if imgs_done else 0
+        remaining_est = rate * (len(remaining) - imgs_done)
+        print(f"\n  💾 Saved! ({img_idx}/{total_images} images done, "
+              f"~{remaining_est/60:.0f} min remaining)")
+
+    # ── Final summary ───────────────────────────────────────────────────
     elapsed = time.time() - start_time
-    fieldnames = [
-        "image", "dataset", "degradation", "frame", "severity_pct",
-        "dinov2_prediction", "dinov2_failure",
-        "clip_prediction", "clip_failure",
-        "detr_prediction", "detr_failure",
-    ]
-
-    with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(all_results)
-
     print(f"\n{'='*70}")
     print(f"  BENCHMARK COMPLETE")
-    print(f"  Images processed: {len(image_files)}")
+    print(f"  Images processed: {total_images}")
     print(f"  Total rows:       {len(all_results)}")
     print(f"  Time elapsed:     {elapsed:.1f}s")
     print(f"  Results saved to: {csv_path}")
@@ -271,3 +310,4 @@ if __name__ == "__main__":
     parser.add_argument("--pilot", action="store_true", help="Run a small pilot test (~20 images)")
     args = parser.parse_args()
     run_benchmark(pilot=args.pilot)
+
