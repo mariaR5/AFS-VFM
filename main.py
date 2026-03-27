@@ -16,6 +16,9 @@ Results are exported to  results/full_benchmark.csv
 Usage:
     python main.py              # Full benchmark (1500 images)
     python main.py --pilot      # Quick pilot run (~20 images)
+    python main.py --batch 1    # Run images 1-500 only
+    python main.py --batch 2    # Run images 501-1000 only
+    python main.py --batch 3    # Run images 1001-1500 only
 """
 
 import os
@@ -119,9 +122,16 @@ def infer_detr(model, processor, frame, device) -> str:
 
 # ── Main benchmark loop ────────────────────────────────────────────────────
 
-def run_benchmark(pilot=False):
-    mode_label = "PILOT (quick validation)" if pilot else "FULL (1500 images)"
-    csv_name = "pilot_benchmark.csv" if pilot else "full_benchmark.csv"
+def run_benchmark(pilot=False, batch=None):
+    if pilot:
+        mode_label = "PILOT (quick validation)"
+        csv_name = "pilot_benchmark.csv"
+    elif batch:
+        mode_label = f"BATCH {batch} of 3 (images {(batch-1)*500+1}–{batch*500})"
+        csv_name = f"batch_{batch}.csv"
+    else:
+        mode_label = "FULL (1500 images)"
+        csv_name = "full_benchmark.csv"
     csv_path = os.path.join(RESULTS_DIR, csv_name)
 
     print("=" * 70)
@@ -133,6 +143,14 @@ def run_benchmark(pilot=False):
     if not image_files:
         print("\n  ERROR: No images found. Run 'python download_dataset.py' first.")
         sys.exit(1)
+
+    # Apply batch slicing (split into 3 groups of 500)
+    if batch and not pilot:
+        batch_size = 500
+        start_idx = (batch - 1) * batch_size
+        end_idx = batch * batch_size
+        image_files = image_files[start_idx:end_idx]
+        print(f"\n  BATCH MODE: Processing images {start_idx+1} to {min(end_idx, len(image_files)+start_idx)}")
 
     # ── Resume support: check for existing partial results ──────────────
     os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -308,6 +326,7 @@ def run_benchmark(pilot=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AFS-VFM Benchmark")
     parser.add_argument("--pilot", action="store_true", help="Run a small pilot test (~20 images)")
+    parser.add_argument("--batch", type=int, choices=[1, 2, 3],
+                        help="Run only batch N (1=images 1-500, 2=501-1000, 3=1001-1500)")
     args = parser.parse_args()
-    run_benchmark(pilot=args.pilot)
-
+    run_benchmark(pilot=args.pilot, batch=args.batch)
