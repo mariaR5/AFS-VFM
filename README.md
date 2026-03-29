@@ -33,10 +33,11 @@ The engine dynamically evaluates corrupted image sequences across three fundamen
 * Handled complex cloud infrastructure by engineering a crash-safe, resumable batching system to bypass strict 12-hour free-tier GPU limits.
 * Successfully generated exactly **150,000 extreme edge-case model inferences**.
 
-## 🚀 What's Next? (The Roadmap)
-The project is currently ~40% complete. We have a long and exciting way to go before final publication:
+## 🚀 What's Next?
+The project is currently **~40% complete**. 
 
-- [x] **Phase 1: Data Infrastructure:** Build the degradation engine and generate the 150,000-row benchmark dataset.
-- [ ] **Phase 2: Threshold Analysis:** Parse the generated CSV data to identify at exactly what severity percentage each model architecture fundamentally breaks.
-- [ ] **Phase 3: Visual Dashboards:** Build compelling UI/data-visualizations to map exactly how model confidence decays under physical stress.
-- [ ] **Phase 4: Research Publication:** Synthesize findings into an academic technical paper detailing VFM reliability for edge-case deployment.
+While Phase 1 effectively solves the massive infrastructure and generation problem (150,000 extreme edge-case inferences), this is only the beginning of the AFS-VFM research.
+
+We possess the raw data footprint showing exactly where these state-of-the-art models fracture under physical stress. The next phase of this project will plunge deep into unlocking, mathematically analyzing, and visualizing those exact breaking points. 
+
+*Stay tuned as we move into the analysis phase...*
