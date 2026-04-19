@@ -1,46 +1,366 @@
-# AFS-VFM: Artificial Fail-States for Vision Foundation Models
+<div align="center">
 
-> **Status:** 🚧 Work in Progress (~40% Finished) 
-> *Currently building the core dataset. Finding out exactly when the biggest AI vision models break.*
+# 🔬 AFS-VFM
 
-## The Core Idea
+### Anticipatory Failure Signals in Vision Foundation Models
 
-People use huge AI vision models (like DINOv2, CLIP, and DETR) for everything from self-driving cars to medical imaging. On paper, these models score close to 100% on clean benchmark datasets. But the real world is messy. 
+*Systematically stress-testing state-of-the-art AI vision models to discover exactly when — and why — they break.*
 
-What happens to a self-driving car's vision when a camera lens gets partially blocked by dirt? Or when it suddenly gets dark? At what exact point does the AI stop "seeing" correctly and start guessing?
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
+[![HuggingFace](https://img.shields.io/badge/HuggingFace-Transformers-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Phase%201%20Complete%20(~40%25)-blue)]()
 
-**AFS-VFM** is a project built to answer that. I am building a custom pipeline that takes clean images, simulates real-world physical degradations (like motion blur or lighting drops) on a sliding scale from 1% to 100%, and tests exactly when these massive models fail.
+<br/>
 
-## How It Works
+**150,000 model inferences** · **3 foundation models** · **5 degradation types** · **1,500 benchmark images**
 
-Right now, Phase 1 (Data Generation) is fully complete. The pipeline works in two main tracks:
+</div>
 
-### 1. The Degradation Engine
-I built a python engine from scratch that takes a normal image and applies one of 5 corruptions, smoothly increasing the intensity across 20 frames:
-- 🌧️ **Motion Blur:** Mimicking fast-moving cameras
-- ⬛ **Occlusion:** Dropping random black boxes over important features
-- 🌑 **Lighting:** Progressively plunging the image into darkness
-- 📉 **Scale:** Destroying image quality via extreme pixelation
-- 📐 **Viewpoint:** Warping the 3D perspective
+---
 
-### 2. Model Inference
-The engine then feeds these corrupted frames into three very different types of vision models to compare how they react:
-* `DINOv2` (Classification - Self-Supervised)
-* `CLIP` (Zero-Shot Reasoning)
-* `DETR` (Object Detection)
+## 📌 Table of Contents
 
-## What We've Built So Far
+- [The Problem](#-the-problem)
+- [Our Approach](#-our-approach)
+- [System Architecture](#-system-architecture)
+- [Degradation Engine (Track A)](#-degradation-engine--track-a)
+- [Model Inference Pipeline (Track B)](#-model-inference-pipeline--track-b)
+- [Key Results So Far](#-key-results-so-far)
+- [Project Roadmap](#-project-roadmap)
+- [Tech Stack](#-tech-stack)
+- [Repository Structure](#-repository-structure)
+- [Getting Started](#-getting-started)
+- [Contributors](#-contributors)
 
-Phase 1 was all about infrastructure and generating the benchmark data. 
-To get around the strict 12-hour free-tier GPU limits on Kaggle, I engineered a highly resilient, auto-resuming batch processing script. 
+---
 
-It worked perfectly: we successfully processed 1,500 validation images (from COCO and ImageNet) across 5 degradations and generated exactly **150,000 extreme edge-case model inferences**. 
+## 🧠 The Problem
 
-## What's Next?
-The project is currently about 40% done. 
+Vision Foundation Models (VFMs) like **DINOv2**, **CLIP**, and **DETR** achieve near-perfect accuracy on clean benchmark datasets. But the real world is messy — camera lenses get dirty, lighting drops, objects move, perspectives shift.
 
-Phase 1 solved the massive infrastructure and data generation problem. Now that we have the 150,000-row CSV dataset showing exactly where these models fracture under physical stress, the real fun begins. 
+> **At what exact point does a state-of-the-art AI vision model stop *seeing* and start *guessing*?**
 
-The next step is to dive into the data, mathematically figure out the exact breaking points for each model, and build visual dashboards to showcase the results. 
+Current robustness benchmarks (ImageNet-C, COCO-C) test models at discrete corruption levels. They tell you *that* a model failed — but not *when* the internal signal crossed the tipping point. **AFS-VFM** fills that gap.
 
-*Stay tuned for the analysis phase...*
+---
+
+## 🎯 Our Approach
+
+Instead of testing models on a single corrupted image, we generate a **20-frame temporal degradation sequence** where corruption intensity increases linearly from **0% to 100%**. This allows us to pinpoint the **exact frame** where each model's prediction transitions from correct to incorrect — the **failure boundary**.
+
+We then compare three architecturally distinct foundation models on the same degradation sequences to understand how different learned representations handle identical real-world stress:
+
+| Model | Architecture | Task | Paradigm |
+|-------|-------------|------|----------|
+| **DINOv2** (`facebook/dinov2-base-imagenet1k-1-layer`) | ViT-B/14 | Image Classification | Self-Supervised Learning |
+| **CLIP** (`openai/clip-vit-base-patch32`) | ViT-B/32 + Text Encoder | Zero-Shot Classification | Contrastive Language-Image Pre-training |
+| **DETR** (`facebook/detr-resnet-50`) | ResNet-50 + Transformer | Object Detection | End-to-End Detection |
+
+---
+
+## 🏗 System Architecture
+
+The pipeline operates in two parallel tracks with a clean handshake protocol:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        AFS-VFM BENCHMARK PIPELINE                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   ┌───────────────────────────────────────────┐                         │
+│   │       TRACK A: Degradation Engine         │                         │
+│   │                                           │                         │
+│   │   Input Image ──► DegradationPipeline     │                         │
+│   │                     │                     │                         │
+│   │       ┌─────────────┼─────────────┐       │                         │
+│   │       ▼             ▼             ▼       │                         │
+│   │   Motion Blur   Occlusion    Lighting     │                         │
+│   │       ▼             ▼             ▼       │                         │
+│   │     Scale      Viewpoint                  │                         │
+│   │       │             │                     │                         │
+│   │       └─────────────┼─────────────┘       │                         │
+│   │                     ▼                     │                         │
+│   │   Output: NumPy Array (20, H, W, 3)       │                         │
+│   └───────────────────┬───────────────────────┘                         │
+│                       │                                                 │
+│              ─── Handshake Protocol ───                                  │
+│                       │                                                 │
+│   ┌───────────────────▼───────────────────────┐                         │
+│   │       TRACK B: Inference Pipeline         │                         │
+│   │                                           │                         │
+│   │   Frame[0] ──► Establish Baseline         │                         │
+│   │   Frame[N] ──► Run DINOv2 / CLIP / DETR   │                         │
+│   │              ──► Compare to Baseline       │                         │
+│   │              ──► Record is_failure         │                         │
+│   │                     │                     │                         │
+│   │   Output: CSV with failure annotations     │                         │
+│   └───────────────────────────────────────────┘                         │
+│                                                                         │
+│   ┌───────────────────────────────────────────┐                         │
+│   │       INFRASTRUCTURE                      │                         │
+│   │   • Crash-safe CSV checkpointing          │                         │
+│   │   • Auto-resume on restart                │                         │
+│   │   • Batch splitting (3 × 500 images)      │                         │
+│   │   • Kaggle/Colab T4 GPU compatible        │                         │
+│   └───────────────────────────────────────────┘                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ⚙️ Degradation Engine — Track A
+
+A **deterministic**, **reproducible** image corruption engine built from scratch. No randomness — the same input always produces the same output, which is essential for scientific reproducibility.
+
+Each degradation type is designed to target a specific failure mode that vision models encounter in real-world deployment:
+
+| # | Degradation | Real-World Scenario | Algorithm | Severity Range |
+|---|-------------|-------------------|-----------|---------------|
+| 1 | **Motion Blur** | Camera shake, moving objects | Horizontal convolution kernel (`cv2.filter2D`) | Kernel: 1 → 51 px |
+| 2 | **Occlusion** | Objects blocking the field of view | Deterministic black rectangular patches | Coverage: 0% → 40% |
+| 3 | **Lighting** | Nighttime, shadows, underexposure | RGB brightness + contrast scaling | Brightness: 100% → 5% |
+| 4 | **Scale** | Low resolution, distance from camera | Downsample + nearest-neighbor upsample | Resolution: 100% → 2% |
+| 5 | **Viewpoint** | Camera tilt, perspective distortion | Perspective warp (`cv2.warpPerspective`) | Pinch: 0% → 40% |
+
+### Design Principles
+
+- **Frame 0 Guarantee**: The first frame is always pixel-identical to the original image — this is the clean baseline for all model comparisons
+- **Linear Severity**: Severity scales from `0.0` to `1.0` across 20 frames (5.26% per frame), making it straightforward to correlate signal changes with known corruption levels
+- **Resolution Preservation**: All frames maintain the original image dimensions
+- **Minimal Dependencies**: The engine uses only OpenCV and NumPy — no deep learning frameworks required
+
+---
+
+## 🤖 Model Inference Pipeline — Track B
+
+Three vision foundation models are loaded via HuggingFace Transformers and evaluated in PyTorch inference mode:
+
+```python
+# DINOv2 — Classification via self-supervised features
+outputs = dinov2_model(**processor(images=frame, return_tensors="pt"))
+prediction = model.config.id2label[outputs.logits.argmax(-1).item()]
+
+# CLIP — Zero-shot reasoning against 20 candidate labels
+outputs = clip_model(**processor(text=labels, images=frame, return_tensors="pt"))
+prediction = labels[outputs.logits_per_image.softmax(dim=1).argmax(-1).item()]
+
+# DETR — Object detection with confidence scoring
+outputs = detr_model(**processor(images=frame, return_tensors="pt"))
+prediction = model.config.id2label[logits.softmax(-1).max(dim=1)[1][best_det].item()]
+```
+
+### Failure Detection Logic
+
+1. **Frame 0** → Run all 3 models → Store each model's prediction as its **baseline**
+2. **Frames 1–19** → Run all 3 models → Compare each prediction against its baseline
+3. **`is_failure = True`** when the model's prediction **diverges** from the baseline
+
+This captures the exact moment each model's internal reasoning breaks under increasing visual stress.
+
+---
+
+## 📊 Key Results So Far
+
+### Phase 1 — Data Generation: ✅ Complete
+
+We successfully processed **1,500 validation images** (500 from COCO val2017 + 1,000 from ImageNet-1k) across all 5 degradation types and generated exactly **150,000 model inferences** (1,500 × 5 × 20 frames captured at each of the 3 model outputs).
+
+#### Early Observations (Week 2 — Motion Blur on DINOv2)
+
+From our initial single-feature integration test:
+
+| Frame | Severity | DINOv2 Prediction | Status |
+|-------|----------|-------------------|--------|
+| 1 | 0% | `analog clock` | ✅ Baseline |
+| 2 | 5% | `chain mail` | ❌ **First failure** |
+| 6 | 26% | `window screen` | ❌ Drifting |
+| 9–20 | 42–100% | `ruler` | ❌ Locked on wrong class |
+
+> **Key Insight**: DINOv2 failed at just **5% degradation intensity** under motion blur — indicating extreme sensitivity to high-frequency spatial features. The model didn't gradually lose confidence; it **snapped** to a completely wrong class almost immediately.
+
+---
+
+## 🗺 Project Roadmap
+
+```
+Phase 1 — Infrastructure & Data Generation ███████████████████████████████ 100%  ✅
+Phase 2 — Statistical Analysis & Failure Mapping ░░░░░░░░░░░░░░░░░░░░░░░  0%   🔜
+Phase 3 — Visualization Dashboard & Paper ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  0%   📋
+```
+
+| Phase | Milestone | Status | Description |
+|-------|-----------|--------|-------------|
+| **1.1** | Degradation Engine | ✅ Complete | 5-type deterministic corruption engine with clean API |
+| **1.2** | Model Loader | ✅ Complete | DINOv2, CLIP, DETR loading with auto-device detection |
+| **1.3** | Integration Test | ✅ Complete | End-to-end pipeline validation (Track A ↔ Track B) |
+| **1.4** | Full Benchmark Run | ✅ Complete | 150,000 inferences across 1,500 images on Kaggle T4 GPU |
+| **2.1** | Failure Boundary Analysis | 🔜 Next | Mathematical identification of per-model, per-degradation breaking points |
+| **2.2** | Cross-Model Comparison | 📋 Planned | Statistical comparison of failure patterns across DINOv2 / CLIP / DETR |
+| **2.3** | Internal Signal Probing | 📋 Planned | Embedding drift, attention entropy, logit margin analysis |
+| **3.1** | Interactive Dashboard | 📋 Planned | Visual exploration of failure curves and model comparisons |
+| **3.2** | Research Paper | 📋 Planned | Formal write-up of methodology, findings, and implications |
+
+---
+
+## 🛠 Tech Stack
+
+| Category | Technologies |
+|----------|-------------|
+| **Language** | Python 3.10+ |
+| **Deep Learning** | PyTorch 2.0+, HuggingFace Transformers |
+| **Models** | Meta DINOv2, OpenAI CLIP (ViT-B/32), Meta DETR (ResNet-50) |
+| **Computer Vision** | OpenCV, NumPy, Pillow |
+| **Datasets** | COCO val2017, ImageNet-1k (via HuggingFace Datasets) |
+| **Compute** | Kaggle T4 GPU (free tier), Google Colab compatible |
+| **Version Control** | Git, GitHub (multi-contributor workflow with feature branches) |
+
+---
+
+## 📂 Repository Structure
+
+```
+AFS-VFM/
+├── main.py                     # Master orchestration script — full benchmark pipeline
+├── download_dataset.py         # Automated dataset downloader (COCO + ImageNet)
+├── demo_visual.py              # Visual demo — generates degradation grid images
+├── run_combined_test.py        # Integration test (Track A ↔ Track B handshake)
+├── test_script.py              # Smoke tests for the degradation engine
+├── AFS_VFM_Benchmark.ipynb     # One-click Colab notebook for GPU benchmark execution
+├── requirements.txt            # Python dependencies
+├── week2_final_outcome.csv     # Week 2 milestone result — DINOv2 vs Motion Blur
+│
+├── src/
+│   ├── degradation/            # Track A — Degradation Engine
+│   │   ├── __init__.py         # Public API exports
+│   │   ├── degradation.py      # DegradationPipeline class + orchestration
+│   │   ├── transformations.py  # 5 degradation algorithm implementations
+│   │   └── utils.py            # Image I/O utilities
+│   │
+│   └── models/                 # Track B — Model Inference
+│       └── model_loader.py     # VisionModelLoader (DINOv2, CLIP, DETR)
+│
+├── docs/                       # Research documentation
+│   ├── combined_work_test.md   # Milestone 2 integration analysis
+│   ├── research_notes_phase1_week1_aman.md
+│   └── research_notes_phase1_week2_aman.md
+│
+├── data/                       # Datasets (auto-downloaded, git-ignored)
+│   ├── coco_val/               # 500 COCO validation images
+│   └── imagenet_val/           # 1,000 ImageNet validation images
+│
+└── results/                    # Benchmark outputs (generated, git-ignored)
+    └── full_benchmark.csv      # 150,000-row master dataset
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Python 3.10 or higher
+- ~4 GB disk space for datasets
+- GPU recommended (CUDA-compatible) for the full benchmark; CPU works for demos and tests
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/AmanDevNet/AFS-VFM.git
+cd AFS-VFM
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate        # Linux/macOS
+venv\Scripts\activate           # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Quick Start
+
+```bash
+# 1. Run the degradation engine smoke test (no GPU needed)
+python test_script.py
+
+# 2. Generate visual demo grids for all 5 degradation types
+python demo_visual.py
+
+# 3. Download benchmark datasets (~1.5 GB)
+python download_dataset.py
+
+# 4. Run a quick pilot benchmark (~20 images)
+python main.py --pilot
+
+# 5. Run the full benchmark (1,500 images — GPU recommended)
+python main.py
+```
+
+### Running on Google Colab / Kaggle
+
+Open `AFS_VFM_Benchmark.ipynb` — it handles everything from cloning the repo to downloading datasets to running the full benchmark on a **free T4 GPU**.
+
+---
+
+## 👥 Contributors
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/AmanDevNet">
+        <img src="https://github.com/AmanDevNet.png" width="120px;" alt="Aman Sharma"/><br />
+        <b>Aman Sharma</b>
+      </a><br />
+      <sub>Lead Author</sub><br />
+      <sub>
+        Degradation Engine Architecture · Pipeline Orchestration ·<br/>
+        Batch Processing Infrastructure · Dataset Pipeline · Documentation
+      </sub>
+    </td>
+    <td align="center">
+      <a href="https://github.com/mariaR5">
+        <img src="https://github.com/mariaR5.png" width="120px;" alt="Maria"/><br />
+        <b>Maria</b>
+      </a><br />
+      <sub>Co-Author</sub><br />
+      <sub>
+        Model Inference Pipeline · DINOv2/CLIP/DETR Integration ·<br/>
+        Failure Detection Logic · Code Review · Testing
+      </sub>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 📄 License
+
+This project is open-sourced under the [MIT License](LICENSE).
+
+---
+
+## 🔗 Citation
+
+If you find this work useful in your research, please consider citing:
+
+```bibtex
+@misc{sharma2026afsvfm,
+  title   = {AFS-VFM: Anticipatory Failure Signals in Vision Foundation Models},
+  author  = {Sharma, Aman and Maria},
+  year    = {2026},
+  url     = {https://github.com/AmanDevNet/AFS-VFM}
+}
+```
+
+---
+
+<div align="center">
+
+**🔬 Research in Progress — Phase 2 (Failure Analysis) coming soon.**
+
+*Built with curiosity, broken models, and too many GPU hours.*
+
+</div>
