@@ -321,9 +321,9 @@ Open `AFS_VFM_Benchmark.ipynb` — it handles everything from cloning the repo t
       </sub>
     </td>
     <td align="center">
-      <a href="https://github.com/mariaR5">
-        <img src="https://github.com/mariaR5.png" width="120px;" alt="Maria"/><br />
-        <b>Maria</b>
+      <a href="https://github.com/angeltaneja">
+        <img src="https://github.com/angeltaneja.png" width="120px;" alt="Angel Taneja"/><br />
+        <b>Angel Taneja</b>
       </a><br />
       <sub>Co-Author</sub><br />
       <sub>
@@ -349,7 +349,7 @@ If you find this work useful in your research, please consider citing:
 ```bibtex
 @misc{sharma2026afsvfm,
   title   = {AFS-VFM: Anticipatory Failure Signals in Vision Foundation Models},
-  author  = {Sharma, Aman and Maria},
+  author  = {Sharma, Aman and Taneja, Angel},
   year    = {2026},
   url     = {https://github.com/AmanDevNet/AFS-VFM}
 }
