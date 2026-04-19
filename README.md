@@ -336,7 +336,7 @@ Open `AFS_VFM_Benchmark.ipynb` — it handles everything from cloning the repo t
       <sub>Co-Author</sub><br />
       <sub>
         Research Paper Authoring · Visualization & Analytics ·<br/>
-        System Testing · Quality Assurance · Code Review
+        Testing · DINOv2/CLIP/DETR Integration · Failure Detection Logic · Quality Assurance · Code Review
       </sub>
     </td>
   </tr>
