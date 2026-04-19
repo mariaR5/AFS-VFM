@@ -6,6 +6,12 @@
 
 *Systematically stress-testing state-of-the-art AI vision models to discover exactly when — and why — they break.*
 
+> **Research into anticipatory failure signals in vision foundation models — DINOv2, CLIP, DETR. Targeting BMVC/WACV.**
+
+`computer-vision` • `vision-transformers` • `deep-learning` • `pytorch` • `huggingface` • `research` • `dinov2` • `clip` • `image-classification` • `robustness`
+
+<br/>
+
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
 [![HuggingFace](https://img.shields.io/badge/HuggingFace-Transformers-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co)
@@ -314,6 +320,7 @@ Open `AFS_VFM_Benchmark.ipynb` — it handles everything from cloning the repo t
         <img src="https://github.com/AmanDevNet.png" width="120px;" alt="Aman Sharma"/><br />
         <b>Aman Sharma</b>
       </a><br />
+      <a href="https://www.linkedin.com/in/aman-sharma-842b66318"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white" alt="LinkedIn"/></a><br />
       <sub>Lead Author</sub><br />
       <sub>
         Degradation Engine Architecture · Pipeline Orchestration ·<br/>
