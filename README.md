@@ -323,8 +323,8 @@ Open `AFS_VFM_Benchmark.ipynb` — it handles everything from cloning the repo t
       <a href="https://www.linkedin.com/in/aman-sharma-842b66318"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white" alt="LinkedIn"/></a><br />
       <sub>Lead Author</sub><br />
       <sub>
-        Degradation Engine Architecture · Pipeline Orchestration ·<br/>
-        Batch Processing Infrastructure · Dataset Pipeline · Documentation
+        Degradation Engine Architecture · Model Inference Integration ·<br/>
+        Batch Processing Infrastructure · Dataset Pipeline · Orchestration
       </sub>
     </td>
     <td align="center">
@@ -332,10 +332,11 @@ Open `AFS_VFM_Benchmark.ipynb` — it handles everything from cloning the repo t
         <img src="https://github.com/angeltaneja.png" width="120px;" alt="Angel Taneja"/><br />
         <b>Angel Taneja</b>
       </a><br />
+      <a href="https://www.linkedin.com/in/angel-taneja-140b45263"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white" alt="LinkedIn"/></a><br />
       <sub>Co-Author</sub><br />
       <sub>
-        Model Inference Pipeline · DINOv2/CLIP/DETR Integration ·<br/>
-        Failure Detection Logic · Code Review · Testing
+        Research Paper Authoring · Visualization & Analytics ·<br/>
+        System Testing · Quality Assurance · Code Review
       </sub>
     </td>
   </tr>

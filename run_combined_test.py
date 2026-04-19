@@ -6,7 +6,7 @@ import numpy as np
 # Import Aman's Engine (Track A)
 from src.degradation.degradation import generate_degradation_sequence
 
-# Import Maria's PyTorch Models (Track B)
+# Import Angel's PyTorch Models (Track B)
 from src.models.model_loader import VisionModelLoader
 
 def run_combined_test(image_path: str):
@@ -15,8 +15,8 @@ def run_combined_test(image_path: str):
     frames = generate_degradation_sequence(image_path, "blur")
     print(f"Success: Aman returned sequence of shape {frames.shape}")
     
-    print("\n--- 2. Loading Maria's DINOv2 PyTorch Model ---")
-    # Calling Maria's API
+    print("\n--- 2. Loading Angel's DINOv2 PyTorch Model ---")
+    # Calling Angel's API
     loader = VisionModelLoader()
     model, processor = loader.load_dinov2()
     device = loader.device
@@ -27,7 +27,7 @@ def run_combined_test(image_path: str):
     first_failure_found = False
 
     for i, frame in enumerate(frames):
-        # Convert Aman's NumPy array slice to a format Maria's processor accepts
+        # Convert Aman's NumPy array slice to a format Angel's processor accepts
         inputs = processor(images=frame, return_tensors="pt").to(device)
         
         with torch.no_grad():
